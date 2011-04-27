@@ -37,7 +37,7 @@ echo "quit;" >> ${tmpf}
 
 ## parts list gets exported as iso-8859-1
 for x in *.parts.txt; do
-    iconv -f iso-8859-1 -t utf-8 ${x} > ${x}.converted
+    iconv -f iso-8859-1 -t utf-8 ${x} | expand | egrep -v '^Exported from ' > ${x}.converted
     mv ${x}.converted ${x}
 done
 

@@ -1,6 +1,5 @@
 Partlist
 
-Exported from furnace_monitor.sch at 4/27/11 11:15 AM
 
 EAGLE Version 5.10.0 Copyright (c) 1988-2010 CadSoft
 
