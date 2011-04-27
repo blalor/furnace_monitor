@@ -1,11 +1,12 @@
 Partlist
 
-Exported from furnace_monitor.sch at 4/27/11 5:46 AM
+Exported from furnace_monitor.sch at 4/27/11 11:15 AM
 
 EAGLE Version 5.10.0 Copyright (c) 1988-2010 CadSoft
 
 Part     Value              Device             Package          Library             Sheet
 
+ASSOC    LTL-4231           LED3MM             LED3MM           led                 1
 C1       0.1µ               C-US025-025X050    C025-025X050     rcl                 1
 C3       0.1µ               C-US025-025X050    C025-025X050     rcl                 1
 C4       47µ                CPOL-USE2-5        E2-5             rcl                 1
@@ -22,25 +23,24 @@ D8       1N4004             1N4004             DO41-10          diode           
 D9       1N4004             1N4004             DO41-10          diode               1
 FTDI                        PINHD-1X6/90       1X06/90          pinhead             1
 FURNACE                     1X2-3.5MM          1X2-3.5MM        adafruit            1
-IC2                         ULINK_MC1700       ULINK_TO92       xbee                1
+IC2      MCP1700-3302E/TO   ULINK_MC1700       ULINK_TO92       xbee                1
 IC3      TINY85P            TINY85P            DIL08            iswba               1
 IC4      7805T              7805T              TO220H           adafruit            1
 ICSP                        PINHD-2X3          2X03             pinhead             1
-LED1                        LED3MM             LED3MM           led                 1
-LED2                        LED3MM             LED3MM           led                 1
-LED3                        LED3MM             LED3MM           led                 1
+PWR      LTL-4211N          LED3MM             LED3MM           led                 1
 R1       PCH-1XXXX          PCH-1XXXX          PCH-1XXXX        iswba               1
-R2                          R-US_0207/10       0207/10          rcl                 1
+R2       10k                R-US_0207/10       0207/10          rcl                 1
 R3       10k                R-US_0204/7        0204/7           rcl                 1
-R5                          R-US_0204/7        0204/7           rcl                 1
-R9       180                R-US_0204/7        0204/7           rcl                 1
-R10                         R-US_0204/7        0204/7           rcl                 1
-R11      180                R-US_0204/7        0204/7           rcl                 1
-R12                         R-US_0204/7        0204/7           rcl                 1
-R13                         R-US_0204/7        0204/7           rcl                 1
-R14                         R-US_0204/7        0204/7           rcl                 1
-R15                         R-US_0204/7        0204/7           rcl                 1
-T1                          -NPN-TO92-CBE      TO92-CBE         transistor-neu-to92 1
+R5       1k                 R-US_0204/7        0204/7           rcl                 1
+R9       120                R-US_0204/7        0204/7           rcl                 1
+R10      120                R-US_0204/7        0204/7           rcl                 1
+R11      120                R-US_0204/7        0204/7           rcl                 1
+R12      68                 R-US_0204/7        0204/7           rcl                 1
+R13      1500               R-US_0204/7        0204/7           rcl                 1
+R14      4.7k               R-US_0204/7        0204/7           rcl                 1
+R15      4.7k               R-US_0204/7        0204/7           rcl                 1
+RSSI     LTL-4251           LED3MM             LED3MM           led                 1
+T1       BC547              -NPN-TO92-CBE      TO92-CBE         transistor-neu-to92 1
 U$1      MINIMIDI_2.1MMJACK MINIMIDI_2.1MMJACK MINIMIDI_PJ-102A boarduino           1
 U$2      ULINK_XBEE         ULINK_XBEE         ULINK_XBEE       xbee                1
 U$4      MID400             MID400             DIL08            sprinkler_timer     1
