@@ -19,5 +19,8 @@ test:
     X relay activate (PB4)
     X detect current (PB3)
     X detect zone state (PB2)
+      send samples every 15 seconds
+      start timer
+      cancel timer
       transmit serial data
       receive serial data
