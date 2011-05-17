@@ -1,6 +1,6 @@
 clock is 8mhz
 
-voltage sense --
+zone monitor (voltage sense) --
     when there is a voltage differential, nothing is calling for heat
         LED is lit, so MID400 will output LOW
     when no voltage differential, will (possibly us) is calling for heat
@@ -17,7 +17,7 @@ current sense --
 
 test:
     X relay activate (PB4)
-      detect current (PB3)
-      detect voltage (PB2)
+    X detect current (PB3)
+    X detect zone state (PB2)
       transmit serial data
       receive serial data
