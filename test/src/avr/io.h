@@ -13,6 +13,45 @@ extern volatile uint8_t virtualPORTB;
 #define PINB (virtualPINB)
 extern volatile uint8_t virtualPINB;
 
+#define USIBR (virtualUSIBR)
+extern volatile uint8_t virtualUSIBR;
+
+#define USICR (virtualUSICR)
+extern volatile uint8_t virtualUSICR;
+
+#define USISR (virtualUSISR)
+extern volatile uint8_t virtualUSISR;
+
+#define GIFR (virtualGIFR)
+extern volatile uint8_t virtualGIFR;
+
+#define GIMSK (virtualGIMSK)
+extern volatile uint8_t virtualGIMSK;
+
+#define PCMSK (virtualPCMSK)
+extern volatile uint8_t virtualPCMSK;
+
+#define GTCCR (virtualGTCCR)
+extern volatile uint8_t virtualGTCCR;
+
+#define TCCR0A (virtualTCCR0A)
+extern volatile uint8_t virtualTCCR0A;
+
+#define TCCR0B (virtualTCCR0B)
+extern volatile uint8_t virtualTCCR0B;
+
+#define OCR0A (virtualOCR0A)
+extern volatile uint8_t virtualOCR0A;
+
+#define TIMSK (virtualTIMSK)
+extern volatile uint8_t virtualTIMSK;
+
+#define TIFR (virtualTIFR)
+extern volatile uint8_t virtualTIFR;
+
+#define TCNT0 (virtualTCNT0)
+extern volatile uint8_t virtualTCNT0;
+
 // GTCCR
 #define PSR0 0
 #define PSR1 1
