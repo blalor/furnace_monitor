@@ -24,3 +24,7 @@ test:
       cancel timer
       transmit serial data
       receive serial data
+    X configure serial bit rate at init time
+      configure parity bit at init time
+    X ensure timer0 values stay within bounds
+    X ensure timer0 values stay within error margins
