@@ -1,0 +1,23 @@
+clock is 8mhz
+
+voltage sense --
+    when there is a voltage differential, nothing is calling for heat
+        LED is lit, so MID400 should output HIGH
+    when no voltage differential, something (possibly us) is calling for heat
+        LED is NOT lit, so MID400 should output LOW
+
+current sense --
+    when current is flowing, there is a voltage differential
+        LED is lit, so MID400 should output HIGH
+        we are calling for heat, furnace is running
+    when current is NOT flowing, there is no voltage differential
+        LED is NOT lit, so MID400 should output LOW
+        if we are calling for heat
+            furnace is NOT running (low water/high temp cutoff)
+
+test:
+    X relay activate (PB4)
+      detect current (PB3)
+      detect voltage (PB2)
+      transmit serial data
+      receive serial data
