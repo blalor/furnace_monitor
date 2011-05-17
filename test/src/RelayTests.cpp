@@ -3,7 +3,6 @@
 
 extern "C" {
     #include <avr/io.h>
-    #include <avr/interrupt.h>
     
     #include "relay.h"
 }
