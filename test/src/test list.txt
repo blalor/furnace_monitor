@@ -2,16 +2,16 @@ clock is 8mhz
 
 voltage sense --
     when there is a voltage differential, nothing is calling for heat
-        LED is lit, so MID400 should output HIGH
-    when no voltage differential, something (possibly us) is calling for heat
-        LED is NOT lit, so MID400 should output LOW
+        LED is lit, so MID400 will output LOW
+    when no voltage differential, will (possibly us) is calling for heat
+        LED is NOT lit, so MID400 should output HIGH
 
 current sense --
     when current is flowing, there is a voltage differential
-        LED is lit, so MID400 should output HIGH
+        LED is lit, so MID400 will output LOW
         we are calling for heat, furnace is running
     when current is NOT flowing, there is no voltage differential
-        LED is NOT lit, so MID400 should output LOW
+        LED is NOT lit, so MID400 will output HIGH
         if we are calling for heat
             furnace is NOT running (low water/high temp cutoff)
 
