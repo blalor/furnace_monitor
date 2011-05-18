@@ -26,7 +26,9 @@ FUSES      = -U lfuse:w:0xE2:m -U hfuse:w:0xdd:m  -U efuse:w:0xff:m
 # Tune the lines below only if you know what you are doing:
 
 AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
-COMPILE = avr-gcc -g -Wall -Werror -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Isrc
+# choose minimal printf implementation
+# http://www.nongnu.org/avr-libc/user-manual/group__avr__stdio.html#gaa3b98c0d17b35642c0f3e4649092b9f1
+COMPILE = avr-gcc -g -Wall -Werror -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Isrc -Wl,-u,vfprintf -lprintf_min
 
 # symbolic targets:
 all:	main.hex
