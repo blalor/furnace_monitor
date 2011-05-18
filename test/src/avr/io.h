@@ -55,6 +55,18 @@ extern volatile uint8_t virtualTIFR;
 #define TCNT0 (virtualTCNT0)
 extern volatile uint8_t virtualTCNT0;
 
+#define TCCR1 (virtualTCCR1)
+extern volatile uint8_t virtualTCCR1;
+
+#define OCR1A (virtualOCR1A)
+extern volatile uint8_t virtualOCR1A;
+
+#define OCR1B (virtualOCR1B)
+extern volatile uint8_t virtualOCR1B;
+
+#define TCNT1 (virtualTCNT1)
+extern volatile uint8_t virtualTCNT1;
+
 // GTCCR
 #define PSR0 0
 #define PSR1 1
