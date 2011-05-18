@@ -5,6 +5,7 @@ volatile uint8_t virtualPORTB;
 volatile uint8_t virtualPINB;
 volatile uint8_t virtualUSIBR;
 volatile uint8_t virtualUSICR;
+volatile uint8_t virtualUSIDR;
 volatile uint8_t virtualUSISR;
 volatile uint8_t virtualGIFR;
 volatile uint8_t virtualGIMSK;

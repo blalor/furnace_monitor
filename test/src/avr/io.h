@@ -19,6 +19,9 @@ extern volatile uint8_t virtualUSIBR;
 #define USICR (virtualUSICR)
 extern volatile uint8_t virtualUSICR;
 
+#define USIDR (virtualUSIDR)
+extern volatile uint8_t virtualUSIDR;
+
 #define USISR (virtualUSISR)
 extern volatile uint8_t virtualUSISR;
 
