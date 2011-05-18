@@ -1,4 +1,5 @@
 #include "avr/io.h"
+#include "util/parity.h"
 
 volatile uint8_t virtualDDRB;
 volatile uint8_t virtualPORTB;
@@ -17,3 +18,14 @@ volatile uint8_t virtualOCR0A;
 volatile uint8_t virtualTIMSK;
 volatile uint8_t virtualTIFR;
 volatile uint8_t virtualTCNT0;
+
+uint8_t parity_even_bit(const uint8_t v) {
+    uint8_t ret = v;
+    
+    ret ^= ret >> 4;
+    ret ^= ret >> 2;
+    ret ^= ret >> 1;
+    ret &= 0x01;
+    
+    return ret;
+}
