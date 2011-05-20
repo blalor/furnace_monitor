@@ -13,7 +13,14 @@ DEVICE     = attiny85
 CLOCK      = 8000000
 PROGRAMMER = -c avrispmkii -P usb
 OBJECTS    = \
+    src/8bit_tiny_timer0.o \
+    src/usi_serial.o \
     main.o
+    # src/8bit_tiny_timer1.o \
+    # src/current_sensor.o \
+    # src/relay.o \
+    # src/scheduler.o \
+    # src/zone_monitor.o \
 
 # defaults
 #FUSES      = -U lfuse:w:0x62:m -U hfuse:w:0xdf:m  -U efuse:w:0xff:m
