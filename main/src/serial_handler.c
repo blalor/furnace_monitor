@@ -20,20 +20,23 @@ static State state;
 static uint8_t msg_len;
 static uint8_t checksum;
 
-static void (*msg_handler)(const uint8_t *, const uint8_t);
+static void (*msg_handler)(const void *, const size_t);
+static uint8_t (*tx_byte_callback)(const size_t);
 
 // buffer for storing incoming data
 static uint8_t *data_buf;
 static uint8_t data_buf_len, data_buf_ind;
 
 void serial_handler_init(
-    void (*received_msg_handler)(const uint8_t *, const uint8_t),
+    void (*received_msg_handler)(const void *, const size_t),
     uint8_t *buf,
-    uint8_t buf_len
+    uint8_t buf_len,
+    uint8_t (*tx_cb)(const size_t)
 ) {
     state = STATE_RESET;
     
     msg_handler = received_msg_handler;
+    tx_byte_callback = tx_cb;
     
     data_buf = buf;
     data_buf_len = buf_len;
@@ -98,4 +101,19 @@ void serial_handler_consume(const uint8_t byte) {
             state = STATE_RESET;
         }
     }
+}
+
+void serial_handler_send(const void *data, const size_t data_size) {
+    tx_byte_callback(0xff);
+    tx_byte_callback(0x55);
+    
+    uint16_t checksum = data_size;
+    (void) tx_byte_callback(data_size);
+    
+    for (size_t i = 0; i < data_size; i++) {
+        checksum += ((uint8_t *)data)[i];
+        (void) tx_byte_callback(((uint8_t *)data)[i]);
+    }
+    
+    (void) tx_byte_callback(0x100 - (checksum & 0xFF));
 }
