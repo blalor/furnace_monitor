@@ -2,8 +2,10 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 typedef enum __state {
+    STATE_RESET,
     STATE_WAITING_FOR_HDR,
     STATE_WAITING_FOR_LEN,
     STATE_WAITING_FOR_CHKSUM,
@@ -29,8 +31,7 @@ void serial_handler_init(
     uint8_t *buf,
     uint8_t buf_len
 ) {
-    state = STATE_WAITING_FOR_HDR;
-    hdr_ind = 0;
+    state = STATE_RESET;
     
     msg_handler = received_msg_handler;
     
@@ -40,20 +41,31 @@ void serial_handler_init(
 }
 
 void serial_handler_consume(const uint8_t byte) {
-    // hdr_ind and hdr_ind_prev used to test last two bytes received against 
-    // start marker (0xff 0x55)
-    uint8_t hdr_ind_prev = hdr_ind;
-    hdr_ind = (hdr_ind + 1) % HDR_BUF_SIZE;
-    
-    // add incoming byte to header buffer
-    hdr_buf[hdr_ind] = byte;
-    
-    // test for start marker in incoming data
-    if ((hdr_buf[hdr_ind_prev] == 0xff) && (hdr_buf[hdr_ind] == 0x55)) {
-        state = STATE_WAITING_FOR_LEN;
+    if (state == STATE_RESET) {
+        memset(hdr_buf, 0, HDR_BUF_SIZE);
+        hdr_ind = 0;
         
+        memset(data_buf, 0, data_buf_len);
         data_buf_ind = 0;
+        
         msg_len = 0;
+        
+        state = STATE_WAITING_FOR_HDR;
+    }
+    
+    if (state == STATE_WAITING_FOR_HDR) {
+        // hdr_ind and hdr_ind_prev used to test last two bytes received 
+        // against start marker (0xff 0x55)
+        uint8_t hdr_ind_prev = hdr_ind;
+        hdr_ind = (hdr_ind + 1) % HDR_BUF_SIZE;
+    
+        // add incoming byte to header buffer
+        hdr_buf[hdr_ind] = byte;
+    
+        // test for start marker in incoming data
+        if ((hdr_buf[hdr_ind_prev] == 0xff) &&(hdr_buf[hdr_ind] == 0x55)) {
+            state = STATE_WAITING_FOR_LEN;
+        }
     }
     else if (state == STATE_WAITING_FOR_LEN) {
         // record length of the message, minus the checksum
@@ -67,7 +79,7 @@ void serial_handler_consume(const uint8_t byte) {
         }
         else {
             // buffer's not big enough
-            state = STATE_WAITING_FOR_HDR;
+            state = STATE_RESET;
         }
     }
     else if (state == STATE_WAITING_FOR_CHKSUM) {
@@ -83,7 +95,7 @@ void serial_handler_consume(const uint8_t byte) {
                 msg_handler(data_buf, msg_len);
             }
             
-            state = STATE_WAITING_FOR_HDR;
+            state = STATE_RESET;
         }
     }
 }
