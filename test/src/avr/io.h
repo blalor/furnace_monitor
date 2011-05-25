@@ -64,6 +64,9 @@ extern volatile uint8_t virtualOCR1A;
 #define OCR1B (virtualOCR1B)
 extern volatile uint8_t virtualOCR1B;
 
+#define OCR1C (virtualOCR1C)
+extern volatile uint8_t virtualOCR1C;
+
 #define TCNT1 (virtualTCNT1)
 extern volatile uint8_t virtualTCNT1;
 
@@ -88,8 +91,12 @@ extern volatile uint8_t virtualTCNT1;
 #define WGM02 3
 
 // TCCR1
-#define CS13 3
+#define CTC1 7
 
+
+
+#define CS13 3
+#define CS12 2
 #define CS11 1
 #define CS10 0
 
