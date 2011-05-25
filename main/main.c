@@ -36,7 +36,7 @@ const Timer1Registers timer1Regs = {
     &OCR1B,
     &OCR1C,
     &TIMSK,
-    &TCNT1
+    &TCNT1,
 };
 
 const USISerialRegisters usiSerReg = {
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
     //     serial_handler needs furnace_controller_init and usi_tx_byte
 
     timer0_init(&timer0Regs, TIMER0_PRESCALE_8);  // 1 µS/tick
-
+    
     furnace_controller_init(serial_handler_send);
     usi_serial_init(&usiSerReg, serial_handler_consume, BAUD_9600, false);
     serial_handler_init(
@@ -119,8 +119,9 @@ int main(int argc, char **argv) {
     
     sei();
     
-    furnace_timer_start(120);
-
+    // send status on startup
+    furnace_send_status();
+    
     for (;;) {
         scheduler_invoke_tasks();
         // @todo watchdog
