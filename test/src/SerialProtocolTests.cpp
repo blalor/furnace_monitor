@@ -30,7 +30,7 @@ void spy_receive_msg(const void *msg, const size_t len) {
     memcpy(spy_msg, msg, len);
 }
 
-uint8_t spy_tx_byte(const size_t b) {
+uint8_t spy_tx_byte(const uint8_t b) {
     tx_data_buf[tx_data_buf_ind++] = b;
     
     return 0;
@@ -184,23 +184,8 @@ TEST(SerialProtocolTests, SendMessageFromString) {
     const char *data_to_send = "this is a test";
     
     char compare_buf[] = {
-        0xff,
-        0x55,
-        14,
-        't',
-        'h',
-        'i',
-        's',
-        ' ',
-        'i',
-        's',
-        ' ',
-        'a',
-        ' ',
-        't',
-        'e',
-        's',
-        't',
+        0xff, 0x55, 14,
+        't', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 't', 'e', 's', 't',
         0xdd, // checksum
     };
 

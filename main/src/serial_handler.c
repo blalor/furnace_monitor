@@ -5,44 +5,49 @@
 #include <string.h>
 
 typedef enum __state {
-    STATE_RESET,
-    STATE_WAITING_FOR_HDR,
-    STATE_WAITING_FOR_LEN,
-    STATE_WAITING_FOR_CHKSUM,
+    STATE_RESET,              // reinitialize
+    STATE_WAITING_FOR_HDR,    // message start not yet received
+    STATE_WAITING_FOR_LEN,    // have header byt no length
+    STATE_WAITING_FOR_CHKSUM, // reading data, waiting for checksum
 } State;
 
-// circular-buffer-like thing
+// circular-buffer-like thing for watching for the message header
 #define HDR_BUF_SIZE 2
 static uint8_t hdr_buf[HDR_BUF_SIZE];
 static uint8_t hdr_ind;
 
-static State state;
-static uint8_t msg_len;
-static uint8_t checksum;
+// callback for valid messages
+static void (*msg_handler)(const void *data, const size_t data_size);
 
-static void (*msg_handler)(const void *, const size_t);
-static uint8_t (*tx_byte_callback)(const size_t);
+// callback for transmitting a byte
+static uint8_t (*tx_byte_fn)(const uint8_t);
 
-// buffer for storing incoming data
+// app-provided buffer for storing incoming data
 static uint8_t *data_buf;
 static uint8_t data_buf_len, data_buf_ind;
+
+// for maintaining state
+static State state;                // current state (duh)
+static uint8_t expected_msg_len;   // expected message length
+static uint16_t inflight_checksum; // checksum, calculated in-flight
 
 void serial_handler_init(
     void (*received_msg_handler)(const void *, const size_t),
     uint8_t *buf,
     uint8_t buf_len,
-    uint8_t (*tx_cb)(const size_t)
+    uint8_t (*tx_cb)(const uint8_t)
 ) {
     state = STATE_RESET;
     
     msg_handler = received_msg_handler;
-    tx_byte_callback = tx_cb;
+    tx_byte_fn = tx_cb;
     
     data_buf = buf;
     data_buf_len = buf_len;
     data_buf_ind = 0;
 }
 
+// invoked in the ISR; must be fast!
 void serial_handler_consume(const uint8_t byte) {
     if (state == STATE_RESET) {
         memset(hdr_buf, 0, HDR_BUF_SIZE);
@@ -51,7 +56,7 @@ void serial_handler_consume(const uint8_t byte) {
         memset(data_buf, 0, data_buf_len);
         data_buf_ind = 0;
         
-        msg_len = 0;
+        expected_msg_len = 0;
         
         state = STATE_WAITING_FOR_HDR;
     }
@@ -72,13 +77,13 @@ void serial_handler_consume(const uint8_t byte) {
     }
     else if (state == STATE_WAITING_FOR_LEN) {
         // record length of the message, minus the checksum
-        msg_len = byte;
+        expected_msg_len = byte;
         
-        if (msg_len <= data_buf_len) {
+        if (expected_msg_len <= data_buf_len) {
             // can proceed to next state
             state = STATE_WAITING_FOR_CHKSUM;
             
-            checksum = msg_len;
+            inflight_checksum = expected_msg_len;
         }
         else {
             // buffer's not big enough
@@ -87,15 +92,15 @@ void serial_handler_consume(const uint8_t byte) {
     }
     else if (state == STATE_WAITING_FOR_CHKSUM) {
         // waiting for checksum
-        if (data_buf_ind < msg_len) {
+        if (data_buf_ind < expected_msg_len) {
             data_buf[data_buf_ind++] = byte;
-            checksum += byte;
+            inflight_checksum += byte;
         }
         else {
-            // received all data; this is the checksum
-            if (((0x100 - (checksum & 0xFF))) == byte) {
+            // received all data; this is the checksum. if invalid, do nothing
+            if (((0x100 - (inflight_checksum & 0xFF))) == byte) {
                 // successful!
-                msg_handler(data_buf, msg_len);
+                msg_handler(data_buf, expected_msg_len);
             }
             
             state = STATE_RESET;
@@ -104,16 +109,16 @@ void serial_handler_consume(const uint8_t byte) {
 }
 
 void serial_handler_send(const void *data, const size_t data_size) {
-    tx_byte_callback(0xff);
-    tx_byte_callback(0x55);
-    
-    uint16_t checksum = data_size;
-    (void) tx_byte_callback(data_size);
+    uint16_t cksum = data_size;
+
+    (void) tx_byte_fn(0xff);
+    (void) tx_byte_fn(0x55);
+    (void) tx_byte_fn(data_size);
     
     for (size_t i = 0; i < data_size; i++) {
-        checksum += ((uint8_t *)data)[i];
-        (void) tx_byte_callback(((uint8_t *)data)[i]);
+        cksum += ((uint8_t *)data)[i];
+        (void) tx_byte_fn(((uint8_t *)data)[i]);
     }
     
-    (void) tx_byte_callback(0x100 - (checksum & 0xFF));
+    (void) tx_byte_fn(0x100 - (cksum & 0xFF));
 }
