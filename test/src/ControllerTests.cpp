@@ -1,6 +1,9 @@
 #include "CppUTest/TestHarness.h"
 #include "8bit_binary.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 extern "C" {
     #include <avr/io.h>
     
@@ -8,15 +11,28 @@ extern "C" {
     #include "relay.h"
 }
 
+// spy for the furnace controller to use when sending data
+// same as serial_handler_send
+static void *spy_data_received;
+static size_t spy_data_len_received;
+static void spy_msg_sender(const void *data, const size_t data_len) {
+    spy_data_len_received = data_len;
+    spy_data_received = malloc(spy_data_len_received);
+    memcpy(spy_data_received, data, data_len);
+}
+
 TEST_GROUP(ControllerTests) {
     void setup() {
-        furnace_controller_init();
+        spy_data_received = NULL;
+        spy_data_len_received = 0;
+        
+        furnace_controller_init(spy_msg_sender);
 
         virtualPORTB = 0;
     }
     
     void teardown() {
-        
+        free(spy_data_received);
     }
 };
 
@@ -36,7 +52,7 @@ TEST_GROUP(ControllerTests) {
 TEST(ControllerTests, Initialization) {
     relay_on();
     
-    furnace_controller_init();
+    furnace_controller_init(spy_msg_sender);
     
     FurnaceStatus status = furnace_get_status();
     
@@ -119,5 +135,65 @@ TEST(ControllerTests, CheckStatusOverrideInffective) {
     FurnaceStatus status = furnace_get_status();
     
     CHECK_FALSE(status.zone_active);
+    LONGS_EQUAL(120, status.timer_remaining);
+}
+
+TEST(ControllerTests, ReceiveMessageStartTimer) {
+    virtualPORTB = 0;
+    
+    const FurnaceStartTimerCommand fst = {'S', 120};
+    
+    // should invoke furnace_timer_start
+    furnace_handle_incoming_msg(&fst, sizeof(FurnaceStartTimerCommand));
+    
+    FurnaceStatus status = furnace_get_status();
+    
+    BYTES_EQUAL(B00010000, virtualPORTB);
+    LONGS_EQUAL(120, status.timer_remaining);
+}
+
+TEST(ControllerTests, ReceiveMessageCancelTimer) {
+    virtualPORTB = 0xff;
+    
+    // should invoke furnace_timer_start
+    furnace_handle_incoming_msg("C", 1);
+    
+    FurnaceStatus status = furnace_get_status();
+    
+    BYTES_EQUAL(B11101111, virtualPORTB);
+    LONGS_EQUAL(0, status.timer_remaining);
+}
+
+TEST(ControllerTests, UpdateTimer) {
+    furnace_timer_start(120);
+    furnace_update_timer();
+    
+    FurnaceStatus status = furnace_get_status();
+    
+    CHECK_TRUE(status.zone_active);
+    LONGS_EQUAL(119, status.timer_remaining);
+}
+
+TEST(ControllerTests, TimerExpired) {
+    furnace_timer_start(1);
+    furnace_update_timer();
+    
+    FurnaceStatus status = furnace_get_status();
+    
+    CHECK_FALSE(status.zone_active);
+    LONGS_EQUAL(0, status.timer_remaining);
+}
+
+TEST(ControllerTests, SendStatus) {
+    FurnaceStatus status = {false, 0};
+    
+    furnace_timer_start(120);
+
+    furnace_send_status();
+    
+    LONGS_EQUAL(sizeof(FurnaceStatus), spy_data_len_received);
+    memcpy(&status, spy_data_received, spy_data_len_received);
+    
+    CHECK_TRUE(status.zone_active);
     LONGS_EQUAL(120, status.timer_remaining);
 }
