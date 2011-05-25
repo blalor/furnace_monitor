@@ -8,12 +8,16 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <util/delay.h>
-
-#include <stdio.h>
 
 #include "8bit_tiny_timer0.h"
+#include "8bit_tiny_timer1.h"
 #include "usi_serial.h"
+#include "serial_handler.h"
+#include "scheduler.h"
+#include "current_sensor.h"
+#include "relay.h"
+#include "zone_monitor.h"
+#include "controller.h"
 
 const Timer0Registers timer0Regs = {
     &GTCCR,
@@ -23,6 +27,16 @@ const Timer0Registers timer0Regs = {
     &TIMSK,
     &TIFR,
     &TCNT0
+};
+
+const Timer1Registers timer1Regs = {
+    &GTCCR,
+    &TCCR1,
+    &OCR1A,
+    &OCR1B,
+    &OCR1C,
+    &TIMSK,
+    &TCNT1
 };
 
 const USISerialRegisters usiSerReg = {
@@ -38,47 +52,74 @@ const USISerialRegisters usiSerReg = {
     &PCMSK,
 };
 
-volatile bool have_byte;
-volatile uint8_t received_byte;
+// buffer passed to serial_handler_init to store incoming data. 
+// @todo tune for max expected message
+#define RX_DATA_BUF_SIZE 32
+uint8_t rx_data_buf[RX_DATA_BUF_SIZE];
 
-static int uart_putchar(char c, FILE *stream) {
-    return usi_tx_byte(c);
-}
+// task for sending samples; run every 15 seconds
+Task sample_tx_task = {
+    0,       // counter
+    7500,    // target time; 15s/(( ( 8 µS/tick ) * 250 )/1000000)
+    true,    // enabled
+    furnace_send_status
+};
 
-static FILE mystdout =
-    FDEV_SETUP_STREAM(uart_putchar, NULL, _FDEV_SETUP_WRITE);
+// updates the furnace timer; responsible for decrementing counter and 
+// expiring when complete.
+Task update_furnace_timer_task = {
+    0,       // counter
+    500,     // target time; 1s/(((8 µS/tick)*250)/1000000)
+    true,    // enabled
+    furnace_update_timer
+};
 
-void handle_received_byte(uint8_t b) {
-    received_byte = b;
-    have_byte = true;
-    // PORTB ^= _BV(PB4);
-}
+const Task *tasks[] = {
+    &sample_tx_task,
+    &update_furnace_timer_task,
+};
 
 int main(int argc, char **argv) {
-    timer0_init(&timer0Regs, TIMER0_PRESCALE_8); //  1 µS/tick
-    usi_serial_init(&usiSerReg, handle_received_byte, BAUD_9600, false);
-
-    stdout = &mystdout;
+    current_sensor_init();
+    relay_init();
+    zone_monitor_init();
     
-    // DDRB |= _BV(PB4);
-    // PORTB |= _BV(PB4);
+    // gak. ugly inter-module dependencies. tho the order doesn't matter
+    // (nothing's called until sei(), I'm trying for something that looks 
+    // right.
+    //     controller needs serial_handler_send
+    //     usi_serial needs serial_handler_consumer, timer0
+    //     serial_handler needs furnace_controller_init and usi_tx_byte
+
+    timer0_init(&timer0Regs, TIMER0_PRESCALE_8);  // 1 µS/tick
+
+    furnace_controller_init(serial_handler_send);
+    usi_serial_init(&usiSerReg, serial_handler_consume, BAUD_9600, false);
+    serial_handler_init(
+        furnace_handle_incoming_msg,
+        rx_data_buf, RX_DATA_BUF_SIZE,
+        usi_tx_byte
+    );
+    
+    scheduler_init(
+        (Task **)&tasks,
+        sizeof(tasks)/sizeof(tasks[0])
+    );
+    
+    timer1_init(&timer1Regs, TIMER1_PRESCALE_64); // 8 µS/tick
+    timer1_set_counter(0);
+    timer1_enable_ctc(250);
+    timer1_attach_interrupt_ocra(250, scheduler_tick);
+    timer1_start();
     
     sei();
     
-    for (;;) {
-        // if (have_byte) {
-        //     uint8_t b = received_byte;
-        //     have_byte = false;
-        //     
-        //     (void) usi_tx_byte(b);
-        // }
-        _delay_ms(1000);
-        printf("Hello, world!\n");
+    furnace_timer_start(120);
 
-        // (void) usi_tx_byte('f');
-        // (void) usi_tx_byte('o');
-        // (void) usi_tx_byte('o');
-        // (void) usi_tx_byte('\n');
+    for (;;) {
+        scheduler_invoke_tasks();
+        // @todo watchdog
+        // @todo sleep?
     }
     
     return 0; // never reached

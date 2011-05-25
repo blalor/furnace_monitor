@@ -15,12 +15,14 @@ PROGRAMMER = -c avrispmkii -P usb
 OBJECTS    = \
     src/8bit_tiny_timer0.o \
     src/usi_serial.o \
+    src/8bit_tiny_timer1.o \
+    src/current_sensor.o \
+    src/relay.o \
+    src/controller.o \
+    src/serial_handler.o \
+    src/scheduler.o \
+    src/zone_monitor.o \
     main.o
-    # src/8bit_tiny_timer1.o \
-    # src/current_sensor.o \
-    # src/relay.o \
-    # src/scheduler.o \
-    # src/zone_monitor.o \
 
 # defaults
 #FUSES      = -U lfuse:w:0x62:m -U hfuse:w:0xdf:m  -U efuse:w:0xff:m
@@ -35,7 +37,7 @@ FUSES      = -U lfuse:w:0xE2:m -U hfuse:w:0xdd:m  -U efuse:w:0xff:m
 AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
 # choose minimal printf implementation
 # http://www.nongnu.org/avr-libc/user-manual/group__avr__stdio.html#gaa3b98c0d17b35642c0f3e4649092b9f1
-COMPILE = avr-gcc -g -Wall -Werror -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Isrc -Wl,-u,vfprintf -lprintf_min
+COMPILE = avr-gcc --std=c99 -g -Wall -Werror -Os -DF_CPU=$(CLOCK) -mmcu=$(DEVICE) -Isrc -Wl,-u,vfprintf -lprintf_min
 
 # symbolic targets:
 all:	main.hex
