@@ -57,20 +57,22 @@ const USISerialRegisters usiSerReg = {
 #define RX_DATA_BUF_SIZE 32
 uint8_t rx_data_buf[RX_DATA_BUF_SIZE];
 
+#define TIMER1_OCRA 250
+
 // task for sending samples; run every 15 seconds
 Task sample_tx_task = {
-    0,       // counter
-    7500,    // target time; 15s/(( ( 8 µS/tick ) * 250 )/1000000)
-    true,    // enabled
+    0,                   // counter
+    7500, // secToTaskTarget(64, TIMER1_OCRA, 15), // 15 seconds
+    true,                // enabled
     furnace_send_status
 };
 
 // updates the furnace timer; responsible for decrementing counter and 
 // expiring when complete.
 Task update_furnace_timer_task = {
-    0,       // counter
-    500,     // target time; 1s/(((8 µS/tick)*250)/1000000)
-    true,    // enabled
+    0,                  // counter
+    500, // secToTaskTarget(64, TIMER1_OCRA, 1), // 1 second
+    true,               // enabled
     furnace_update_timer
 };
 
@@ -107,9 +109,12 @@ int main(int argc, char **argv) {
     );
     
     timer1_init(&timer1Regs, TIMER1_PRESCALE_64); // 8 µS/tick
+    
+    // fire scheduler_tick every 2ms (exactly!)
+    timer1_attach_interrupt_ocra(TIMER1_OCRA, scheduler_tick);
+    timer1_enable_ctc(TIMER1_OCRA);
     timer1_set_counter(0);
-    timer1_enable_ctc(250);
-    timer1_attach_interrupt_ocra(250, scheduler_tick);
+    
     timer1_start();
     
     sei();
