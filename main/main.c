@@ -1,6 +1,6 @@
 /*
     relay: PB4
-    current sense: PB3
+    furnace power sense: PB3
     voltage sense/zone monitor: PB2
     serial tx: PB1
     serial rx: PB0
@@ -14,7 +14,7 @@
 #include "usi_serial.h"
 #include "serial_handler.h"
 #include "scheduler.h"
-#include "current_sensor.h"
+#include "furnace_power_sensor.h"
 #include "relay.h"
 #include "zone_monitor.h"
 #include "controller.h"
@@ -82,7 +82,7 @@ const Task *tasks[] = {
 };
 
 int main(int argc, char **argv) {
-    current_sensor_init();
+    furnace_power_sensor_init();
     relay_init();
     zone_monitor_init();
     

@@ -5,8 +5,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+typedef enum __zone_state {
+    ZONE_STATE_UNKNOWN,
+    ZONE_STATE_ACTIVE,
+    ZONE_STATE_INACTIVE
+} ZoneState;
+
 typedef struct __furnace_status {
-    bool zone_active;
+    ZoneState zone_state;
+    bool furnace_powered;
     uint16_t timer_remaining;
 } FurnaceStatus;
 

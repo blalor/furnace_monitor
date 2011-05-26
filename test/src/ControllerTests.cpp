@@ -28,7 +28,7 @@ TEST_GROUP(ControllerTests) {
         
         furnace_controller_init(spy_msg_sender);
 
-        virtualPORTB = 0;
+        virtualPORTB = B00000000; // zone monitor inactive, furnace power on
     }
     
     void teardown() {
@@ -42,7 +42,7 @@ TEST_GROUP(ControllerTests) {
     cancel timer
     
     voltage sensor on PB2
-    current sensor on PB3
+    furnace power sensor on PB3
     relay on PB4
 */
 
@@ -67,7 +67,7 @@ TEST(ControllerTests, CheckStatusZoneActive) {
     
     FurnaceStatus status = furnace_get_status();
     
-    CHECK_TRUE(status.zone_active);
+    CHECK_TRUE(status.zone_state == ZONE_STATE_ACTIVE);
 }
 
 TEST(ControllerTests, CheckStatusZoneInactive) {
@@ -76,7 +76,7 @@ TEST(ControllerTests, CheckStatusZoneInactive) {
     
     FurnaceStatus status = furnace_get_status();
     
-    CHECK_FALSE(status.zone_active);
+    CHECK_TRUE(status.zone_state == ZONE_STATE_INACTIVE);
 }
 
 TEST(ControllerTests, TimerStartActivatesRelay) {
@@ -103,39 +103,6 @@ TEST(ControllerTests, TimerCancelDeactivatesRelay) {
     
     BYTES_EQUAL(B00000000, virtualPORTB);
     LONGS_EQUAL(0, status.timer_remaining);
-}
-
-TEST(ControllerTests, CheckStatusOverrideEffective) {
-    // timer active with 2 minutes remaining, thermostat not calling for heat
-    
-    // in this scenario, the zone monitor will be irrelevant, and the current
-    // sensor should be *active*
-    
-    virtualPORTB = B00000000; // zone monitor inactive, current sensor active
-    
-    furnace_timer_start(120);
-    
-    FurnaceStatus status = furnace_get_status();
-    
-    CHECK_TRUE(status.zone_active);
-    LONGS_EQUAL(120, status.timer_remaining);
-}
-
-TEST(ControllerTests, CheckStatusOverrideInffective) {
-    // timer active with 2 minutes remaining, but no current flowing, so either
-    // thermostat calling for heat or furnace safeties have been activated
-    
-    // in this scenario, the zone monitor will be irrelevant, and the current
-    // sensor will be inactive
-    
-    virtualPORTB = B00001000; // zone monitor inactive, current sensor inactive
-    
-    furnace_timer_start(120);
-    
-    FurnaceStatus status = furnace_get_status();
-    
-    CHECK_FALSE(status.zone_active);
-    LONGS_EQUAL(120, status.timer_remaining);
 }
 
 TEST(ControllerTests, ReceiveMessageStartTimer) {
@@ -170,7 +137,8 @@ TEST(ControllerTests, UpdateTimer) {
     
     FurnaceStatus status = furnace_get_status();
     
-    CHECK_TRUE(status.zone_active);
+    CHECK_TRUE(status.furnace_powered);
+    CHECK_TRUE(status.zone_state == ZONE_STATE_UNKNOWN);
     LONGS_EQUAL(119, status.timer_remaining);
 }
 
@@ -180,12 +148,14 @@ TEST(ControllerTests, TimerExpired) {
     
     FurnaceStatus status = furnace_get_status();
     
-    CHECK_FALSE(status.zone_active);
+    CHECK_TRUE(status.zone_state == ZONE_STATE_INACTIVE);
     LONGS_EQUAL(0, status.timer_remaining);
 }
 
 TEST(ControllerTests, SendStatus) {
-    FurnaceStatus status = {false, 0};
+    virtualPORTB = B00000000; // zone monitor inactive, furnace power on
+    
+    FurnaceStatus status = {ZONE_STATE_UNKNOWN, false, 0};
     
     furnace_timer_start(120);
 
@@ -194,6 +164,7 @@ TEST(ControllerTests, SendStatus) {
     LONGS_EQUAL(sizeof(FurnaceStatus), spy_data_len_received);
     memcpy(&status, spy_data_received, spy_data_len_received);
     
-    CHECK_TRUE(status.zone_active);
+    CHECK_TRUE(status.furnace_powered);
+    CHECK_TRUE(status.zone_state == ZONE_STATE_UNKNOWN); // can't tell when timer on
     LONGS_EQUAL(120, status.timer_remaining);
 }

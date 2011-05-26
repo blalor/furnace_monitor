@@ -4,14 +4,14 @@
 extern "C" {
     #include <avr/io.h>
     
-    #include "current_sensor.h"
+    #include "furnace_power_sensor.h"
 }
 
-TEST_GROUP(CurrentSensorTests) {
+TEST_GROUP(FurnacePowerSensorTests) {
     void setup() {
         virtualDDRB = 0xff;
         
-        current_sensor_init();
+        furnace_power_sensor_init();
     }
     
     void teardown() {
@@ -22,18 +22,18 @@ TEST_GROUP(CurrentSensorTests) {
 /*
  * confirm proper setup after initialization
  */
-TEST(CurrentSensorTests, Initialization) {
+TEST(FurnacePowerSensorTests, Initialization) {
     BYTES_EQUAL(B11110111, virtualDDRB);  // pin set to input
 }
 
-TEST(CurrentSensorTests, CurrentFlowing) {
+TEST(FurnacePowerSensorTests, CurrentFlowing) {
     virtualPORTB = B11110111;
     
-    CHECK_TRUE(is_current_flowing());
+    CHECK_TRUE(is_furnace_power_on());
 }
 
-TEST(CurrentSensorTests, CurrentIsNotFlowing) {
+TEST(FurnacePowerSensorTests, CurrentIsNotFlowing) {
     virtualPORTB = B11111111;
     
-    CHECK_FALSE(is_current_flowing());
+    CHECK_FALSE(is_furnace_power_on());
 }

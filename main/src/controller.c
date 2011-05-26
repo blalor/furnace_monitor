@@ -2,7 +2,7 @@
 
 #include "zone_monitor.h"
 #include "relay.h"
-#include "current_sensor.h"
+#include "furnace_power_sensor.h"
 
 #include <string.h>
 
@@ -20,15 +20,17 @@ FurnaceStatus furnace_get_status() {
     FurnaceStatus status;
 
     status.timer_remaining = timer_remaining;
+    status.furnace_powered = is_furnace_power_on();
     
-    status.zone_active = false;
+    status.zone_state = ZONE_STATE_UNKNOWN;
     
-    if (timer_remaining == 0) {
+    if (status.timer_remaining == 0) {
         // timer should be inactive, so only the zone monitor is relevant
-        status.zone_active = is_zone_active();
-    } else {
-        // furnace timer override active; only current sensor is relevant
-        status.zone_active = is_current_flowing();
+        if (is_zone_active()) {
+            status.zone_state = ZONE_STATE_ACTIVE;
+        } else {
+            status.zone_state = ZONE_STATE_INACTIVE;
+        }
     }
     
     return status;

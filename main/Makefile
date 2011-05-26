@@ -16,7 +16,7 @@ OBJECTS    = \
     src/8bit_tiny_timer0.o \
     src/usi_serial.o \
     src/8bit_tiny_timer1.o \
-    src/current_sensor.o \
+    src/furnace_power_sensor.o \
     src/relay.o \
     src/controller.o \
     src/serial_handler.o \
