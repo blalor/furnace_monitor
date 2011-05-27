@@ -172,10 +172,18 @@ TEST(ControllerTests, SendStatus) {
 /*
  * ensures timer isn't started if a bogus (too long) duration is sent
  */
-TEST(ControllerTests, TimerMaxDurationHonored) {
+TEST(ControllerTests, TimerOverMaxDurationHonored) {
     furnace_timer_start(0xffff);
     
     FurnaceStatus status = furnace_get_status();
     
     LONGS_EQUAL(0, status.timer_remaining);
+}
+
+TEST(ControllerTests, TimerAtMaxDurationHonored) {
+    furnace_timer_start(900);
+    
+    FurnaceStatus status = furnace_get_status();
+    
+    LONGS_EQUAL(900, status.timer_remaining);
 }
