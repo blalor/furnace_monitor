@@ -1,15 +1,4 @@
-# Name: Makefile
-
-CC = avr-gcc
-CXX = avr-g++
-AR = avr-ar
-
-OBJCOPY = avr-objcopy
-OBJDUMP = avr-objdump
-SIZE = avr-size
-
-AVRDUDE = avrdude 
-
+SILENT = @
 
 # DEVICE ....... The AVR device you compile for
 # CLOCK ........ Target AVR clock rate in Hertz
@@ -29,61 +18,97 @@ PROGRAMMER = -c avrispmkii -P usb
 # bodlevel=101
 FUSES = -U lfuse:w:0xE2:m -U hfuse:w:0xdd:m -U efuse:w:0xff:m
 
+## -- ok, that should be the last of the stuff generally defined by the user
+
+C_SRC     = $(foreach dir,. src,$(wildcard $(dir)/*.c))
+ALL_OBJS  = $(C_SRC:.c=.o)
+DEP_FILES = $(ALL_OBJS:.o=.d)
+
+-include $(DEP_FILES)
+
+# compiler and binutils commands =============================================
+CC = avr-gcc
+CXX = avr-g++
+AR = avr-ar
+OBJCOPY = avr-objcopy
+OBJDUMP = avr-objdump
+SIZE = avr-size
+AVRDUDE = avrdude 
+
+# compiler options and *FLAGS ================================================
 TARGET_ARCH = -mmcu=$(DEVICE)
 
 CPPFLAGS = -DF_CPU=$(CLOCK) -Isrc
 CFLAGS   = --std=c99 -Wall -Werror -fdiagnostics-show-option -Os
-ARFLAGS  = rvs
+ARFLAGS  = rs
+# add "v" for verbose
 
 # choose minimal printf implementation
 # http://www.nongnu.org/avr-libc/user-manual/group__avr__stdio.html#gaa3b98c0d17b35642c0f3e4649092b9f1
 # LDFLAGS += -Wl,-u,vfprintf -lprintf_min # … um, program size GROWS when I do that??
 
+# and now for some rules =====================================================
 .SUFFIXES: .elf .hex _size _dis _dump _flash
 
 # If you have an EEPROM section, you must also create a hex file for the
 # EEPROM and add it to the "flash" target.
 .elf.hex:
-	$(OBJCOPY) -j .text -j .data -O ihex $< $@
+	@echo "creating $<"
+	$(SILENT) $(OBJCOPY) -j .text -j .data -O ihex $< $@
 
+# override built-in rule to generate dependency lines with "gcc -M …"
+# default: $(COMPILE.c) $(OUTPUT_OPTION) $<
+.c.o:
+	@echo "compiling $<"
+	$(SILENT) $(CC) $(CFLAGS) $(CPPFLAGS) $(TARGET_ARCH) \
+		-M -MF $(subst .o,.d,$@) -MT "$@ $(subst .o,.d,$@)" $<
+	$(SILENT) $(COMPILE.c) $(OUTPUT_OPTION) $<
+   
 # just messing around here; runs the C preprocessor
 .c.S:
-	$(COMPILE.c) -E $<
+	$(SILENT) $(COMPILE.c) -E $<
 
 %.elf: %.o
-	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
+	@echo "linking $@"
+	$(SILENT) $(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 
+# can't seem to shut up ar; will always say "avr-ar: creating libwhatever.a"
 %.a:
-	$(AR) $(ARFLAGS) $@ $?
+	$(SILENT) $(AR) $(ARFLAGS) $@ $?
 
 # Targets for code debugging and analysis
 
 # show size
 .elf_size:
-	$(SIZE) --mcu=$(DEVICE) --format=avr $<
+	$(SILENT) $(SIZE) --mcu=$(DEVICE) --format=avr $<
 
 # disassemble
 .elf_dis:
-	$(OBJDUMP) -d $<
+	$(SILENT) $(OBJDUMP) -d $<
 
 # http://www.nongnu.org/avr-libc/user-manual/group__demo__project.html#demo_project_obj
 .elf_dump:
-	$(OBJDUMP) -h -S $<
+	$(SILENT) $(OBJDUMP) -h -S $<
 
 .hex_flash:
-	$(AVRDUDE) $(PROGRAMMER) -p $(DEVICE) -U flash:w:$<:i
+	$(SILENT) $(AVRDUDE) $(PROGRAMMER) -p $(DEVICE) -U flash:w:$<:i
 
 # symbolic targets:
+.PHONY: all
 all: main.hex
 
+.PHONY: fuse
 fuse:
-	$(AVRDUDE) $(PROGRAMMER) -p $(DEVICE) $(FUSES)
+	$(SILENT) $(AVRDUDE) $(PROGRAMMER) -p $(DEVICE) $(FUSES)
 
 # Xcode uses the Makefile targets "", "clean" and "install"
+# .PHONY: install
 #install: fuse main_flash 
 
+.PHONY: clean
 clean:
-	rm -f main.hex main.elf *.o lib*.a src/*.o 
+	@echo cleaning
+	$(SILENT) rm -f *.hex *.elf lib*.a $(ALL_OBJS) $(DEP_FILES)
 
 # file targets:
 libtimer.a: src/8bit_tiny_timer0.o src/8bit_tiny_timer1.o
