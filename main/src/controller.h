@@ -5,6 +5,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+// safety/sanity restriction; don't let the timer be set for more than 15 
+// minutes UINT16_MAX (?) is something like 18 HOURS!
+#define TIMER_MAX (15 * 60)
+
 typedef enum __zone_state {
     ZONE_STATE_UNKNOWN,
     ZONE_STATE_ACTIVE,

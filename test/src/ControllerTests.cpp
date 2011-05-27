@@ -168,3 +168,14 @@ TEST(ControllerTests, SendStatus) {
     CHECK_TRUE(status.zone_state == ZONE_STATE_UNKNOWN); // can't tell when timer on
     LONGS_EQUAL(120, status.timer_remaining);
 }
+
+/*
+ * ensures timer isn't started if a bogus (too long) duration is sent
+ */
+TEST(ControllerTests, TimerMaxDurationHonored) {
+    furnace_timer_start(0xffff);
+    
+    FurnaceStatus status = furnace_get_status();
+    
+    LONGS_EQUAL(0, status.timer_remaining);
+}

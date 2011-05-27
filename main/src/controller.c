@@ -37,8 +37,11 @@ FurnaceStatus furnace_get_status() {
 }
 
 void furnace_timer_start(const uint16_t duration_seconds) {
-    relay_on();
-    timer_remaining = duration_seconds;
+    // don't allow the timer to be started for a duration that's too long
+    if (duration_seconds < TIMER_MAX) {
+        relay_on();
+        timer_remaining = duration_seconds;
+    }
 }
 
 void furnace_timer_cancel() {
