@@ -120,5 +120,3 @@ libfurnacecontroller.a: src/controller.o
 
 main.elf: libtimer.a libusiserial.a libscheduler.a libdevices.a \
           libserialprotocol.a libfurnacecontroller.a
-
-datatype_test.elf: libtimer.a libusiserial.a libserialprotocol.a
