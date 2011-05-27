@@ -89,7 +89,10 @@ clean:
 libtimer.a: src/8bit_tiny_timer0.o src/8bit_tiny_timer1.o
 libusiserial.a: src/usi_serial.o
 libscheduler.a: src/scheduler.o
-libdevices.a: src/current_sensor.o src/relay.o src/zone_monitor.o
+libdevices.a: src/furnace_power_sensor.o src/relay.o src/zone_monitor.o
+libserialprotocol.a: src/serial_handler.o
+libfurnacecontroller.a: src/controller.o
 
-main.elf: libtimer.a libusiserial.a libscheduler.a libdevices.a 
+main.elf: libtimer.a libusiserial.a libscheduler.a libdevices.a \
+          libserialprotocol.a libfurnacecontroller.a
 
