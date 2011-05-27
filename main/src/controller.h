@@ -19,7 +19,7 @@ typedef struct __furnace_status {
 
 typedef struct __furnace_start_timer {
     char literal_S;
-    uint8_t duration_seconds;
+    uint16_t duration_seconds;
 } FurnaceStartTimerCommand;
 
 void furnace_controller_init(
