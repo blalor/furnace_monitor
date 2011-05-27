@@ -27,13 +27,13 @@ TEST(ZoneMonitorTests, Initialization) {
 }
 
 TEST(ZoneMonitorTests, ZoneInactive) {
-    virtualPORTB = B11111011; // voltage present, LED lit, output low
+    virtualPINB = B11111011; // voltage present, LED lit, output low
     
     CHECK_FALSE(is_zone_active());
 }
 
 TEST(ZoneMonitorTests, ZoneActive) {
-    virtualPORTB = B11111111; // no voltage present, LED unlit, output high
+    virtualPINB = B11111111; // no voltage present, LED unlit, output high
     
     CHECK_TRUE(is_zone_active());
 }

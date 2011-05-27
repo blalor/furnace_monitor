@@ -8,5 +8,5 @@ void zone_monitor_init() {
 
 bool is_zone_active() {
     // MID400 goes high when no voltage is present (calling for heat)
-    return (PORTB & _BV(PB2)) == _BV(PB2);
+    return (PINB & _BV(PB2)) == _BV(PB2);
 }

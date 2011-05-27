@@ -28,7 +28,7 @@ TEST_GROUP(ControllerTests) {
         
         furnace_controller_init(spy_msg_sender);
 
-        virtualPORTB = B00000000; // zone monitor inactive, furnace power on
+        virtualPINB = B00000000; // zone monitor inactive, furnace power on
     }
     
     void teardown() {
@@ -63,7 +63,7 @@ TEST(ControllerTests, Initialization) {
 
 TEST(ControllerTests, CheckStatusZoneActive) {
     // timer inactive, thermostat calling for heat
-    virtualPORTB = B00000100;
+    virtualPINB = B00000100;
     
     FurnaceStatus status = furnace_get_status();
     
@@ -72,7 +72,7 @@ TEST(ControllerTests, CheckStatusZoneActive) {
 
 TEST(ControllerTests, CheckStatusZoneInactive) {
     // timer inactive, thermostat not calling for heat
-    virtualPORTB = B00000000;
+    virtualPINB = B00000000;
     
     FurnaceStatus status = furnace_get_status();
     
@@ -153,7 +153,7 @@ TEST(ControllerTests, TimerExpired) {
 }
 
 TEST(ControllerTests, SendStatus) {
-    virtualPORTB = B00000000; // zone monitor inactive, furnace power on
+    virtualPINB = B00000000; // zone monitor inactive, furnace power on
     
     FurnaceStatus status = {ZONE_STATE_UNKNOWN, false, 0};
     

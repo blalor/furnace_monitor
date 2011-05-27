@@ -27,13 +27,13 @@ TEST(FurnacePowerSensorTests, Initialization) {
 }
 
 TEST(FurnacePowerSensorTests, CurrentFlowing) {
-    virtualPORTB = B11110111;
+    virtualPINB = B11110111;
     
     CHECK_TRUE(is_furnace_power_on());
 }
 
 TEST(FurnacePowerSensorTests, CurrentIsNotFlowing) {
-    virtualPORTB = B11111111;
+    virtualPINB = B11111111;
     
     CHECK_FALSE(is_furnace_power_on());
 }
