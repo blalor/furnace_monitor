@@ -1,5 +1,16 @@
 # Name: Makefile
 
+CC = avr-gcc
+CXX = avr-g++
+AR = avr-ar
+
+OBJCOPY = avr-objcopy
+OBJDUMP = avr-objdump
+SIZE = avr-size
+
+AVRDUDE = avrdude 
+
+
 # DEVICE ....... The AVR device you compile for
 # CLOCK ........ Target AVR clock rate in Hertz
 # OBJECTS ...... The object files created from your source files. This list is
@@ -12,88 +23,73 @@
 DEVICE     = attiny85
 CLOCK      = 8000000
 PROGRAMMER = -c avrispmkii -P usb
-OBJECTS    = \
-    src/8bit_tiny_timer0.o \
-    src/usi_serial.o \
-    src/8bit_tiny_timer1.o \
-    src/furnace_power_sensor.o \
-    src/relay.o \
-    src/controller.o \
-    src/serial_handler.o \
-    src/scheduler.o \
-    src/zone_monitor.o \
-    main.o
-
-# defaults
-#FUSES      = -U lfuse:w:0x62:m -U hfuse:w:0xdf:m  -U efuse:w:0xff:m
 
 # int. rc osc @ 8mhz [cksel=0010, sut=10]
 # do not divide clock by 8
 # bodlevel=101
-FUSES      = -U lfuse:w:0xE2:m -U hfuse:w:0xdd:m  -U efuse:w:0xff:m
+FUSES = -U lfuse:w:0xE2:m -U hfuse:w:0xdd:m -U efuse:w:0xff:m
 
-# Tune the lines below only if you know what you are doing:
+TARGET_ARCH = -mmcu=$(DEVICE)
 
-AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
+CPPFLAGS = -DF_CPU=$(CLOCK) -Isrc
+CFLAGS   = --std=c99 -Wall -Werror -fdiagnostics-show-option -Os
+ARFLAGS  = rvs
+
 # choose minimal printf implementation
 # http://www.nongnu.org/avr-libc/user-manual/group__avr__stdio.html#gaa3b98c0d17b35642c0f3e4649092b9f1
-COMPILE = avr-gcc --std=c99 -g -Wall -Werror -Os -DF_CPU=$(CLOCK)UL -mmcu=$(DEVICE) -Isrc -Wl,-u,vfprintf -lprintf_min
+# LDFLAGS += -Wl,-u,vfprintf -lprintf_min # … um, program size GROWS when I do that??
 
-# symbolic targets:
-all:	main.hex
+.SUFFIXES: .elf .hex _size _dis _dump _flash
 
-.c.o:
-	@echo compiling $<
-	@$(COMPILE) -c $< -o $@
-
-.S.o:
-	$(COMPILE) -x assembler-with-cpp -c $< -o $@
-# "-x assembler-with-cpp" should not be necessary since this is the default
-# file type for the .S (with capital S) extension. However, upper case
-# characters are not always preserved on Windows. To ensure WinAVR
-# compatibility define the file type manually.
-
-.c.s:
-	@$(COMPILE) -S $< -o $@
-
-flash:	all
-	$(AVRDUDE) -U flash:w:main.hex:i
-
-fuse:
-	$(AVRDUDE) $(FUSES)
-
-# Xcode uses the Makefile targets "", "clean" and "install"
-install: flash fuse
-
-# if you use a bootloader, change the command below appropriately:
-load: all
-	bootloadHID main.hex
-
-clean:
-	@echo cleaning
-	@rm -f main.hex main.elf $(OBJECTS)
-
-# file targets:
-main.elf: $(OBJECTS)
-	@echo linking main.elf
-	@$(COMPILE) -o main.elf $(OBJECTS)
-
-main.hex: main.elf
-	rm -f main.hex
-	avr-objcopy -j .text -j .data -O ihex main.elf main.hex
 # If you have an EEPROM section, you must also create a hex file for the
 # EEPROM and add it to the "flash" target.
+.elf.hex:
+	$(OBJCOPY) -j .text -j .data -O ihex $< $@
 
-# Targets for code debugging and analysis:
-disasm:	main.elf
-	avr-objdump -d main.elf
+# just messing around here; runs the C preprocessor
+.c.S:
+	$(COMPILE.c) -E $<
+
+%.elf: %.o
+	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
+%.a:
+	$(AR) $(ARFLAGS) $@ $?
+
+# Targets for code debugging and analysis
+
+# show size
+.elf_size:
+	$(SIZE) --mcu=$(DEVICE) --format=avr $<
+
+# disassemble
+.elf_dis:
+	$(OBJDUMP) -d $<
 
 # http://www.nongnu.org/avr-libc/user-manual/group__demo__project.html#demo_project_obj
-dump: main.elf
-	@avr-objdump -h -S main.elf
+.elf_dump:
+	$(OBJDUMP) -h -S $<
 
-size: main.elf
-	@avr-size --mcu=$(DEVICE) --format=avr main.elf
+.hex_flash:
+	$(AVRDUDE) $(PROGRAMMER) -p $(DEVICE) -U flash:w:$<:i
 
-cpp:
-	$(COMPILE) -E main.c
+# symbolic targets:
+all: main.hex
+
+fuse:
+	$(AVRDUDE) $(PROGRAMMER) -p $(DEVICE) $(FUSES)
+
+# Xcode uses the Makefile targets "", "clean" and "install"
+#install: fuse main_flash 
+
+clean:
+	rm -f main.hex main.elf *.o lib*.a src/*.o 
+
+# file targets:
+libtimer.a: src/8bit_tiny_timer0.o src/8bit_tiny_timer1.o
+libusiserial.a: src/usi_serial.o
+libscheduler.a: src/scheduler.o
+libdevices.a: src/current_sensor.o src/relay.o src/zone_monitor.o
+
+main.elf: libtimer.a libusiserial.a libscheduler.a libdevices.a 
+
