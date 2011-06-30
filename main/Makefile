@@ -38,7 +38,16 @@ AVRDUDE = avrdude
 # compiler options and *FLAGS ================================================
 TARGET_ARCH = -mmcu=$(DEVICE)
 
-CPPFLAGS = -DF_CPU=$(CLOCK) -Isrc
+CPPFLAGS  = -DF_CPU=$(CLOCK) -Isrc
+
+LIBTIMER_DIR = support/libtimer
+SCHEDULER_DIR = support/scheduler
+SOFTUART_DIR = support/softuart
+
+CPPFLAGS += -I$(LIBTIMER_DIR)/main/src
+CPPFLAGS += -I$(SCHEDULER_DIR)/main/src
+CPPFLAGS += -I$(SOFTUART_DIR)/main/src
+
 CFLAGS   = --std=c99 -Wall -Werror -fdiagnostics-show-option -Os
 ARFLAGS  = rs
 # add "v" for verbose
@@ -111,12 +120,21 @@ clean:
 	$(SILENT) rm -f *.hex *.elf lib*.a $(ALL_OBJS) $(DEP_FILES)
 
 # file targets:
-libtimer.a: src/8bit_tiny_timer0.o src/8bit_tiny_timer1.o
-libusiserial.a: src/usi_serial.o
-libscheduler.a: src/scheduler.o
 libdevices.a: src/furnace_power_sensor.o src/relay.o src/zone_monitor.o
 libserialprotocol.a: src/serial_handler.o
 libfurnacecontroller.a: src/controller.o
 
-main.elf: libtimer.a libusiserial.a libscheduler.a libdevices.a \
+main.elf: $(LIBTIMER_DIR)/main/libtimer_$(DEVICE).a \
+          $(SCHEDULER_DIR)/main/libscheduler_$(DEVICE).a \
+          $(SOFTUART_DIR)/main/libusi_serial_$(DEVICE).a \
+          libdevices.a \
           libserialprotocol.a libfurnacecontroller.a
+
+$(LIBTIMER_DIR)/main/libtimer_$(DEVICE).a:
+	make -C $(LIBTIMER_DIR)/main DEVICE=$(DEVICE) SILENT=$(SILENT) device-specific-lib
+
+$(SCHEDULER_DIR)/main/libscheduler_$(DEVICE).a:
+	make -C $(SCHEDULER_DIR)/main DEVICE=$(DEVICE) SILENT=$(SILENT) device-specific-lib
+
+$(SOFTUART_DIR)/main/libusi_serial_$(DEVICE).a:
+	make -C $(SOFTUART_DIR)/main DEVICE=$(DEVICE) SILENT=$(SILENT) device-specific-lib
